@@ -459,6 +459,15 @@ func (sc *serviceSource) setResourceLabel(service *v1.Service, endpoints []*endp
 	}
 }
 
+func contains(s endpoint.ProviderSpecific, str string) bool {
+	for _, v := range s {
+		if v.Name == str {
+			return true
+		}
+	}
+	return false
+}
+
 func (sc *serviceSource) generateEndpoints(svc *v1.Service, hostname string, providerSpecific endpoint.ProviderSpecific, setIdentifier string, useClusterIP bool) (endpoints []*endpoint.Endpoint) {
 	hostname = strings.TrimSuffix(hostname, ".")
 
@@ -475,6 +484,16 @@ func (sc *serviceSource) generateEndpoints(svc *v1.Service, hostname string, pro
 				targets = extractServiceIps(svc)
 			} else {
 				targets = extractLoadBalancerTargets(svc, sc.resolveLoadBalancerHostname)
+
+				if contains(providerSpecific, "orange-private") {
+					var targetsNew endpoint.Targets
+					for _, t := range targets {
+						if !net.ParseIP(t).IsPrivate() {
+							targetsNew = append(targetsNew, t)
+						}
+					}
+					targets = targetsNew
+				}
 			}
 		case v1.ServiceTypeClusterIP:
 			if svc.Spec.ClusterIP == v1.ClusterIPNone {

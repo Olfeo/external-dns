@@ -231,6 +231,12 @@ func getProviderSpecificAnnotations(annotations map[string]string) (endpoint.Pro
 				Name:  fmt.Sprintf("webhook/%s", attr),
 				Value: v,
 			})
+		} else if strings.HasPrefix(k, "external-dns.alpha.kubernetes.io/orange-") {
+			attr := strings.TrimPrefix(k, "external-dns.alpha.kubernetes.io/orange-")
+			providerSpecificAnnotations = append(providerSpecificAnnotations, endpoint.ProviderSpecificProperty{
+				Name:  fmt.Sprintf("orange-%s", attr),
+				Value: v,
+			})
 		}
 	}
 	return providerSpecificAnnotations, setIdentifier
