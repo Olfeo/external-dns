@@ -19,6 +19,7 @@ package source
 import (
 	"context"
 	"fmt"
+	"net"
 	"sort"
 	"strings"
 	"text/template"
@@ -441,6 +442,15 @@ func (sc *serviceSource) setResourceLabel(service *v1.Service, endpoints []*endp
 	}
 }
 
+func contains(s endpoint.ProviderSpecific, str string) bool {
+	for _, v := range s {
+		if v.Name == str {
+			return true
+		}
+	}
+	return false
+}
+
 func (sc *serviceSource) generateEndpoints(svc *v1.Service, hostname string, providerSpecific endpoint.ProviderSpecific, setIdentifier string, useClusterIP bool) []*endpoint.Endpoint {
 	hostname = strings.TrimSuffix(hostname, ".")
 	ttl, err := getTTLFromAnnotations(svc.Annotations)
@@ -473,6 +483,16 @@ func (sc *serviceSource) generateEndpoints(svc *v1.Service, hostname string, pro
 			targets = append(targets, extractServiceIps(svc)...)
 		} else {
 			targets = append(targets, extractLoadBalancerTargets(svc)...)
+
+			if contains(providerSpecific, "orange-private") {
+				var targetsNew endpoint.Targets
+				for _, t := range targets {
+					if !net.ParseIP(t).IsPrivate() {
+						targetsNew = append(targetsNew, t)
+					}
+				}
+				targets = targetsNew
+			}
 		}
 	case v1.ServiceTypeClusterIP:
 		if sc.publishInternal {
