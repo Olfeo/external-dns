@@ -19,6 +19,7 @@ package source
 import (
 	"context"
 	"fmt"
+	"net"
 	"sort"
 	"strings"
 	"text/template"
@@ -294,7 +295,7 @@ func targetsFromIngressStatus(status networkv1.IngressStatus) endpoint.Targets {
 	var targets endpoint.Targets
 
 	for _, lb := range status.LoadBalancer.Ingress {
-		if lb.IP != "" {
+		if lb.IP != "" && !net.ParseIP(lb.IP).IsPrivate() {
 			targets = append(targets, lb.IP)
 		}
 		if lb.Hostname != "" {
